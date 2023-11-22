@@ -8,13 +8,27 @@ from flask_sqlalchemy import SQLAlchemy
 import json
 from datetime import date, datetime
 import bcrypt
+import yaml
 
+#################################Prometheus export###############################################
+# from prometheus_client import Counter, Histogram, generate_latest, REGISTRY
+# from prometheus_client.exposition import make_wsgi_app
+# from werkzeug.middleware.dispatcher import DispatcherMiddleware
+# from flask_prometheus_metrics import register_metrics
+
+from prometheus_flask_exporter import PrometheusMetrics
+
+#################################################################################################
 
 local_server = True
-with open('config.json', 'r') as c:
-    params = json.load(c)["params"]
+# with open('/myapp1/config/config.yaml', 'r') as c:
+#     params = json.load(c)["params"]
+with open('/myapp1/config/config.yaml', 'r') as c:
+    params = yaml.safe_load(c)["params"]
+
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
 app.secret_key='super-secret-key'
 app.config['UPLOAD_FOLDER']=params['file_location']
 app.config['ALLOWED_EXTENSIONS'] = params['file_format']
@@ -31,7 +45,7 @@ app.config.update(
 #notify=Notify()
 
 if(local_server):
-    app.config['SQLALCHEMY_DATABASE_URI'] = params['local_uri']
+    app.config['SQLALCHEMY_DATABASE_URI'] = params['local_uric']
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = params['prod_uri']
 
@@ -48,7 +62,7 @@ class Contact(db.Model):
 class Users(db.Model):
     srno = db.Column(db.Integer,primary_key=True)
     email = db.Column(db.String(20), nullable=False)
-    psswd = db.Column(db.String(20), nullable=False)
+    psswd = db.Column(db.String(60), nullable=False)
     creation_time = db.Column(db.String(12),nullable=True)
 
 class Posts(db.Model):
@@ -62,6 +76,32 @@ class Posts(db.Model):
     date = db.Column(db.String(12), nullable=True)
     img_file = db.Column(db.String(50), nullable=False)
     tagline = db.Column(db.String(50), nullable=False)
+
+
+#####################################Exporter code##############################################
+# REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests')
+# REQUEST_LATENCY = Histogram('http_request_latency_seconds', 'HTTP request latency')
+
+
+
+# @app.route("/metrics",methods=['GET'])
+# def hello():
+    # Increment the request count metric
+    # REQUEST_COUNT.inc()
+
+    # Start measuring request latency
+    # start_time = time.time()
+    # register_metrics(app, app_version="v0.1.2", app_config="staging")
+    # Simulate some work
+    # import time
+    # time.sleep(0.1)
+
+    # Record the request latency
+    # elapsed_time = time.time() - start_time
+    # REQUEST_LATENCY.observe(elapsed_time)
+
+    # return "Hello, World!"
+#########################################################################################
 
 @app.route("/",methods=['GET'])
 def home():
@@ -101,7 +141,8 @@ def dashboard():
     if(request.method=='POST'):
         username = request.form.get('user_name')
         userpsswd = request.form.get('user_psswd')
-        if(username==params['admin_name'] and userpsswd==params['admin_psswd']):
+        # if(username==params['admin_name'] and userpsswd==params['admin_psswd']):
+        if(username==params['admin_name'] and userpsswd==os.environ['ADMIN_PASSWORD']):
             session['user']=username
             return render_template("dashboard.html", params=params,posts=posts)
         else:
@@ -115,9 +156,9 @@ def user_login():
     if(request.method=='POST'):
         user = Users.query.filter_by(email=request.form.get('user_name')).first()
         userpsswd = request.form.get('user_psswd').encode("utf-8")
-        # return user.email
         if user:
-            if bcrypt.checkpw(userpsswd, user.psswd.encode("utf-8")):
+            # if bcrypt.checkpw(userpsswd, user.psswd.encode("utf-8")):
+            if bcrypt.checkpw(userpsswd, bytes(user.psswd)):
                 return redirect("/")
             else:
                 return "Please ennter correct Password and login."
@@ -132,14 +173,18 @@ def sign_up():
         userpsswd1 = request.form.get('user_psswd1')
         userpsswd2 = request.form.get('user_psswd2')
 
-        if User.query.filter_by(email=request.form.get('user_name')).first():
+        if Users.query.filter_by(email=request.form.get('user_name')).first():
             return "You have already registered."
 
 
         if (userpsswd1!=userpsswd2 or len(userpsswd1)==0):
             return "Mismatch in both passwords. Please confirm the same password or No password entered. Please check."
         else:
-            signup = User(email=username,psswd=bcrypt.hashpw(userpsswd1.encode("utf-8"), bcrypt.gensalt()),creation_time= datetime.now())
+            password_to_hash = userpsswd1.encode("utf-8")  # Ensure it's a bytes object
+            salt = bcrypt.gensalt()
+            hashed_password = bcrypt.hashpw(password_to_hash, salt)
+            signup = Users(email=username,psswd=hashed_password,creation_time= datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            # return bcrypt.hashpw(userpsswd1.encode("utf-8"), bcrypt.gensalt())
             db.session.add(signup)
             db.session.commit()
             return "Your account created successfully. Thanks for joining us"
@@ -166,7 +211,7 @@ def edit(sr):
             slug=request.form.get('slug')
             content=request.form.get('content')
             img=request.form.get('img_file')
-            date=datetime.now()
+            date=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             if sr=='0':
                 post=Posts(title=box_title,tagline=tagline,slug=slug,content=content, img_file=img,date=date)
@@ -229,7 +274,13 @@ def contact():
  #       notify.send('{} have sent a meassage.\n Mob. No. {}.\nmessage-: {} '.format(name,phone,message)) 
     return render_template('contact.html', params=params)
 
+# if __name__ == '__main__':
+#     # Start Prometheus endpoint
+#     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+#         '/metrics': make_wsgi_app()
+#     })
+#     app.run(host='0.0.0.0',port=8080,debug=True)
 
-#app.run(debug=True)
+# app.run(debug=True)
 if __name__ == '__main__':
-  app.run(host='0.0.0.0',port=8080,debug=True)
+  app.run("0.0.0.0", port=8080)

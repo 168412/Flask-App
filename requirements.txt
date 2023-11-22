@@ -1,5 +1,9 @@
-Flask==2.2.2
-Werkzeug==2.2.2
-bcrypt==3.2.2
-Flask_SQLAlchemy==2.5.1
-PyMySQL==1.0.2
+Flask
+Werkzeug
+bcrypt
+Flask_SQLAlchemy
+PyMySQL
+psycopg2-binary
+gunicorn
+pyyaml
+prometheus_flask_exporter

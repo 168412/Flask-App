@@ -1,0 +1,18 @@
+params:
+  local_servers: "True"
+  local_uric: "postgresql://admin:Knit168412@primarydb-svc:5432/python-app"
+  local_uri: "postgresql://admin:Knit168412@primarydb-svc:5432/python-app"
+  prod_uri: "mysql://root:Knit168412@localhost/codingthunder"
+  fb_uri: "https://www.facebook.com/shashank30mishra/"
+  gh_uri: "https://github.com/168412/shawshank"
+  tw_uri: "https://twitter.com/Shashan51491868"
+  mail_id: "fzd224161@gmail.com"
+  psswd: "Knit"
+  about_txt: "Hi my name is shawshank and I am an Engineer."
+  no_post: 2
+  copyright: "Coding Thunder"
+  login_img: "login.svg"
+  admin_name: "fzd224161@gmail.com"
+  admin_psswd: "12345"
+  file_location: "static/assets/img"
+  file_format: "{'png', 'jpg', 'jpeg', 'gif'}"

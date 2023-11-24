@@ -1,0 +1,15 @@
+{{- if .Values.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: primdb
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - {{ .Values.persistentVolume.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistentVolume.size | quote }}
+  volumeName: {{ .Values.persistentVolume.volumeName | quote }}
+  storageClassName: {{ .Values.persistentVolume.storageClass | quote }}
+{{- end }}

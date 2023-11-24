@@ -1,0 +1,80 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "primarydb.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "primarydb.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "primarydb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "primarydb.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: postgres-primary
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 5432
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -ec
+                  - |
+                    sleep 10
+                    cp /var/lib/postgresql/data/postgresql.main.conf /var/lib/postgresql/data/pythonapp/postgresql.conf
+                    cp /var/lib/postgresql/data/pg_hba.main.conf /var/lib/postgresql/data/pythonapp/pg_hba.conf
+                    chmod 600 /var/lib/postgresql/data/pythonapp/postgresql.conf
+                    chmod 600 /var/lib/postgresql/data/pythonapp/pg_hba.conf
+                    sleep 5
+                    # psql -U {{ .Values.global.dbUser | default "postgres" }} {{ .Values.global.dbName | default "python-app" }} -a -f /var/lib/postgresql/data/initial.sql
+          env:
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: python-app-secrets
+                key: POSTGRES_PASSWORD
+          - name: POSTGRES_USER
+            value: "{{ .Values.global.dbUser | default "postgres" }}"
+          - name: POSTGRES_DB
+            value: "{{ .Values.global.dbName | default "python-app" }}"
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pythonapp
+          volumeMounts:
+            - name: pgprim
+              mountPath: /var/lib/postgresql/data
+            - name: prim-config-mnt
+              mountPath: /var/lib/postgresql/data/postgresql.main.conf
+              subPath: postgresql.conf
+            - name: prim-config-mnt
+              mountPath: /var/lib/postgresql/data/pg_hba.main.conf
+              subPath: pg_hba.conf
+            - name: prim-config-mnt
+              mountPath: /docker-entrypoint-initdb.d/initial.sql
+              subPath: initial.sql
+      volumes:
+      - name: pgprim
+        persistentVolumeClaim:
+          claimName: primdb
+      - name: prim-config-mnt
+        configMap:
+          name: {{ .Release.Name }}-configmap
+{{- end }}

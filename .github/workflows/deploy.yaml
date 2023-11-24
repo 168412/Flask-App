@@ -51,7 +51,7 @@ jobs:
 
     deploying_helm:
         needs: docker
-        run-on:
+        runs-on:
             - self-hosted
         steps:
             - name: Checking out to helm repo

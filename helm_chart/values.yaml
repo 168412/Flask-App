@@ -81,7 +81,7 @@ global:
   imagePullSecrets: []
   nameOverride: ""
   fullnameOverride: ""
-  dbPassword: 123456
+  dbPassword: "123456"
   dbUser: admin
   dbName: python-app
   admpass: "12345"

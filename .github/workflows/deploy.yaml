@@ -57,10 +57,10 @@ jobs:
             - name: Checking out to helm repo
               uses: actions/checkout@v3
             - name: Helm Lint
-              uses: WyriHaximus/github-action-helm3@v2
+              uses: WyriHaximus/github-action-helm3@v3
               with:
                 exec: helm lint ./helm-chart
             - name: Helm install
-              uses: WyriHaximus/github-action-helm3@v2
+              uses: WyriHaximus/github-action-helm3@v3
               with:
                 exec: helm upgrade --install test ./helm-chart

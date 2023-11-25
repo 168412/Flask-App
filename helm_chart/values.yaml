@@ -60,10 +60,10 @@ pythonapp:
   replicaCount: 1
 
   image:
-    repository: shashank30mishra/test_web_n
+    repository: shashank30mishra/test_web
     pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-    tag: "latest"
+    # tag: "latest"
   # smtpUser: admin@domain.com
   # smtpPass: example
   # smtpServer: smtp.domain.com

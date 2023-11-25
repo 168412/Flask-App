@@ -63,7 +63,7 @@ pythonapp:
     repository: shashank30mishra/test_web
     pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-    # tag: "latest"
+    tag: app-${{ github.run_number }}
   # smtpUser: admin@domain.com
   # smtpPass: example
   # smtpServer: smtp.domain.com
@@ -81,7 +81,7 @@ global:
   imagePullSecrets: []
   nameOverride: ""
   fullnameOverride: ""
-  dbPassword: Knit168412
+  dbPassword: 123456
   dbUser: admin
   dbName: python-app
   admpass: "12345"

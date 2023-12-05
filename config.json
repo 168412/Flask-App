@@ -3,7 +3,7 @@
     "params":
     {
         "local_servers": "True",
-        "local_uri": "mysql+pymysql://root:pwd@host/dbname?unix_socket=/cloudsql/coonectionname",
+        "local_uri": "postgresql://postgres:Knit168412@0.0.0.0:5432/postgres",
         "prod_uri": "mysql://root:pwd@localhost/codingthunder", 
         "fb_uri": "https://www.facebook.com/shashank30mishra/",
         "gh_uri": "https://github.com/168412/shawshank",
@@ -17,8 +17,8 @@
         "admin_name":"fzd224161@gmail.com",
         "admin_psswd":"12345",
         "file_location":"/static/assets/img",
-	"file_format": "{'png', 'jpg', 'jpeg', 'gif'}"
-        
+	"file_format": "{'png', 'jpg', 'jpeg', 'gif'}",
+        "test": 4
     }
 
 }

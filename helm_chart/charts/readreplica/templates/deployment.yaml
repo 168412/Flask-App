@@ -1,0 +1,89 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "readreplica.fullname" . }}-sb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "readreplica.labels" . | nindent 4 }}-sb
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "readreplica.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "readreplica.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: postgres-sb
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 5432
+          env:
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: python-app-secrets
+                key: POSTGRES_PASSWORD
+          - name: POSTGRES_USER
+            value: "{{ .Values.global.dbUser | default "postgres" }}"
+          - name: POSTGRES_DB
+            value: "{{ .Values.global.dbName | default "python-app" }}"
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pythonapp
+          volumeMounts:
+            - name: pgsb
+              mountPath: /var/lib/postgresql/data
+            - name: sb-config-mnt
+              mountPath: /var/lib/postgresql/data/postgresql.main.conf
+              subPath: postgresql.conf
+            - name: sb-config-mnt
+              mountPath: /var/lib/postgresql/data/recovery.conf
+              subPath: recovery.conf
+      volumes:
+      - name: pgsb
+        persistentVolumeClaim:
+          claimName: standbydb
+      - name: sb-config-mnt
+        configMap:
+          name: {{ .Release.Name }}-configmap-sb
+      initContainers:
+      - name: init-standby
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - /bin/sh
+          - -ec
+          - | 
+            until pg_isready -h primarydb-svc -p 5432; 
+            do echo waiting for database; sleep 2; 
+            done;
+            rm -rf /var/lib/postgresql/data/pythonapp &&
+            PGPASSWORD="changeme" pg_basebackup -h primarydb-svc -D /var/lib/postgresql/data/pythonapp -U repuser -vP
+            cp /var/lib/postgresql/data/postgresql.main.conf /var/lib/postgresql/data/pythonapp/postgresql.conf
+            cp /var/lib/postgresql/data/recovery.main.conf /var/lib/postgresql/data/pythonapp/recovery.conf
+            chmod 600 /var/lib/postgresql/data/pythonapp/postgresql.conf
+            chmod 600 /var/lib/postgresql/data/pythonapp/recovery.conf
+        volumeMounts:
+        - name: pgsb
+          mountPath: /var/lib/postgresql/data
+        - name: sb-config-mnt
+          mountPath: /var/lib/postgresql/data/postgresql.main.conf
+          subPath: postgresql.conf
+        - name: sb-config-mnt
+          mountPath: /var/lib/postgresql/data/recovery.main.conf
+          subPath: recovery.conf
+{{- end }}

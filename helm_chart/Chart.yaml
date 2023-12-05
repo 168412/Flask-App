@@ -1,0 +1,16 @@
+apiVersion: v2
+appVersion: 1.16.0
+dependencies:
+- condition: primarydb.enabled
+  name: primarydb
+  repository: "./primarydb"
+- condition: readreplica.enabled
+  name: readreplica
+  repository: "./readreplica"
+- condition: pythonapp.enabled
+  name: pythonapp
+  repository: "./pythonapp"
+description: A Helm chart for Kubernetes
+name: python-web-app
+type: application
+version: 0.1.0

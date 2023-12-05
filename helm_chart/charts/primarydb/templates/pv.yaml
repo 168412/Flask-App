@@ -1,0 +1,17 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: primarydb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    type: local
+spec:
+  storageClassName: {{ .Values.persistentVolume.storageClass | quote }}
+  capacity:
+    storage: {{ .Values.persistentVolume.size | quote }}
+  accessModes:
+    - {{ .Values.persistentVolume.accessMode | quote }}
+  hostPath:
+    path: {{ .Values.persistentVolume.mountPath | quote }}
+{{- end }}

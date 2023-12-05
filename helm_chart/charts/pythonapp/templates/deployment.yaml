@@ -1,0 +1,66 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pythonapp.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "pythonapp.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "pythonapp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
+      {{- end }}
+      labels:
+        {{- include "pythonapp.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+      - name: check-db-ready
+        image: postgres:10
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ['sh', '-c', 'until pg_isready -h standbydb-svc -p 5432; do echo waiting for database; sleep 2; done; ']
+      containers:
+      - image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: python-web-app
+        ports:
+          - containerPort: 8080
+        env:
+          - name: DBUSER
+            value: "{{ .Values.global.dbUser | default "postgres" }}"
+          - name: DBHOST
+            value: primarydb-svc
+          - name: DBNAME
+            value: "{{ .Values.global.dbName | default "python-app" }}"
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: python-secrets
+                key: POSTGRES_PASSWORD
+          - name: ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: python-secrets
+                key:  ADMIN_PASSWORD
+        volumeMounts:
+        - name: config-volume
+          mountPath: /myapp1/config/
+      volumes:
+      - name: config-volume
+        configMap:
+          name: my-config
+          
+{{- end }} 

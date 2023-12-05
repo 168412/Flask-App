@@ -1,0 +1,26 @@
+{{- if .Values.global.ingress.enabled }}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ include "pythonapp.fullname" . }}-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+    - hosts:
+        - {{ .Values.global.ingress.hosts.host | default "application.domain.com" | quote }}
+  rules:
+    - host: {{ .Values.global.ingress.hosts.host | default "application.domain.com" | quote }}
+      http:
+        paths:
+          - path: {{ .Values.global.ingress.hosts.path | default "/" | quote }}
+            pathType: {{ .Values.global.ingress.hosts.pathType | default "prefix" }}
+            backend:
+              service:
+                name: python-app-svc
+                port:
+                  number: 8080
+{{- end }} 

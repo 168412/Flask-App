@@ -48,12 +48,12 @@ spec:
           - name: POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: python-secrets
+                name: python-app-secrets
                 key: POSTGRES_PASSWORD
           - name: ADMIN_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: python-secrets
+                name: python-app-secrets
                 key:  ADMIN_PASSWORD
         volumeMounts:
         - name: config-volume

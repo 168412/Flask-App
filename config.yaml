@@ -1,0 +1,16 @@
+params:
+  local_servers: "True"
+  local_uric: "postgresql://admin:123456@postgresql-svc:5432/python-app"
+  fb_uri: "https://www.facebook.com/shashank30mishra/"
+  gh_uri: "https://github.com/168412/shawshank"
+  tw_uri: "https://twitter.com/Shashan51491868"
+  mail_id: "admin"
+  psswd: "12345"
+  about_txt: "Hi my name is shawshank and I am an Engineer."
+  no_post: 2
+  copyright: "Coding Thunder"
+  login_img: "login.svg"
+  admin_name: "admin"
+  admin_psswd: "12345"
+  file_location: "static/assets/img"
+  file_format: "{'png', 'jpg', 'jpeg', 'gif'}"
